@@ -1,27 +1,73 @@
-# ns1-dhcpd-ddns-sync
-Tool to synchronize NS1 DNS record management with an ISC DHCPD server
+# DDyn - Dynamic DNS Updater
 
-### Installation
-Create an API key in the NS1 portal if you have not already done so by going to **Account** -> **Settings & Users** -> **Manage API Keys** -> **Add a New Key**.
+DDyn is a dynamic DNS updater application designed to automatically update DNS records when the public IP address changes. The application leverages machine learning to predict IP changes and monitor connectivity, ensuring reliable updates to DNS services.
 
-Create a zone to contain your forward `A` records (`example.com`) and a zone to contain your reverse `PTR` records (`in-addr.arpa`) in the NS1 portal if you have not already done so by going to **Zones** -> **Add a New Zone**.
+## Table of Contents
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Machine Learning Integration](#machine-learning-integration)
+- [License](#license)
 
-Copy the `ns1-dhcpd-ddns-sync.pl` script to a suitable location on your DHCP server, such as `/usr/local/bin`.
+## Features
+- **Dynamic DNS Updates**: Automatically updates DNS records when the public IP address changes using DNS-O-Matic as the provider. This allows users to manage multiple DNS records across various services from a single interface.
+- **Machine Learning Predictions**: Utilizes machine learning models to predict IP changes based on historical data.
+- **Anomaly Detection**: Identifies unusual patterns in IP changes to enhance reliability.
+- **Command-Line Interface**: Provides a simple CLI for managing updates and models.
 
-Add it to `root`'s crontab so it executes frequently, ideally every minute:
+## Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/iap/ddyn.git
+   cd ddyn
+   ```
 
-`* * * * * /usr/local/bin/ns1-dhcpd-ddns-sync.pl --api-key=<key> --forward-zone=<zone> --reverse-zone=<zone>`
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # Linux/Mac
+   # or
+   .venv\Scripts\activate     # Windows
+   ```
 
-`ns1-dhcpd-ddns-sync.pl` assumes that the DHCP server keeps track of active leases in the file `/var/lib/dhcpd/dhcpd.leases`.  If this is not the case, then you can tell `ns1-dhcpd-ddns-sync.pl` where to find the DHCP leases file with the optional `--leases-file=<file>` parameter.
+3. Install the required dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-`ns1-dhcpd-ddns-sync.pl` uses the `Getopt::Long` and `LWP::UserAgent` CPAN modules, which are installed by default on most Linux systems.  However, if your Perl distribution complains that it could not find one or both modules, you can install them via: `sudo perl -MCPAN -e 'install <module>'`.
+4. Configure the environment variables:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your DNS-O-Matic credentials and other settings
+   ```
 
-### Usage
-If you need to troubleshoot the synchronization process between your DHCP server and NS1, you can manually run `ns1-dhcpd-ddns-sync.pl` with the ``--verbose`` parameter, like so:
+## Usage
+1. Start the DNS updater:
+   ```bash
+   python -m src.main
+   ```
 
-`ns1-dhcpd-ddns-sync.pl --verbose --api-key=<key> --forward-zone=<zone> --reverse-zone=<zone>`
+2. Manage machine learning models using the CLI:
+   ```bash
+   python -m src.cli train          # Train the ML models
+   python -m src.cli status         # Check model status
+   python -m src.cli predict        # Get predictions
+   ```
 
-In order to avoid clobbering other records within the forward and reverse zones, `ns1-dhcpd-ddns-sync.pl` stores the ethernet (MAC) address of the DHCP client in the **Notes** field for each corresponding DNS record.  When a lease expires, the DHCP client's ethernet address is removed from `/var/lib/dhcpd/dhcpd.leases`.  Any records found in the forward and reverse zones that contain an ethernet address that is not found in the current `/var/lib/dhcpd/dhcpd.leases` are removed, as the lease is assumed to have expired.  Records not containing an ethernet address in the **Notes** field are left intact.
+## Configuration
+- **Environment Variables**: Configure your `.env` file with the following variables:
+  ```plaintext
+  DNSOMATIC_USERNAME=your_username
+  DNSOMATIC_PASSWORD=your_password
+  DNSOMATIC_HOSTNAME=your_hostname
+  ```
 
-### Bug Reports
-Please report any bugs to <support@ns1.com>.
+## Machine Learning Integration
+- The application uses machine learning models to predict IP changes and enhance connection reliability.
+- Current models include:
+  - **Random Forest Classifier**: For predicting IP changes based on historical data.
+  - **Isolation Forest**: For detecting anomalies in IP change patterns.
+
+## License
+This project is licensed under the GNU General Public License (GPL) Version 3. See the [LICENSE](./LICENSE) file for details.
